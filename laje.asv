@@ -1,0 +1,115 @@
+% ------------------------------------------------------------------------
+% ------------------------------------------------------------------------
+%  Estruturas de Concreto I - 2023.1 - Prof. Augusto Albuquerque
+%  Departamento de Engenharia Estrutural e Construção Civil - DEECC
+%  Universidade Federal do Ceará - UFC
+% ------------------------------------------------------------------------
+%
+%  LAJE
+%  Programa para cálculo de momento em Lajes Maciças segundo as tabelas de
+%  Marcus
+%
+% ------------------------------------------------------------------------
+%
+%  por:
+%  Luiz Carlos Matias Teixeira
+%
+% ------------------------------------------------------------------------
+% to-do list:
+% - corrigir implementação do método de arc-length
+% - pós-processamento de todas as informações em arquivos 
+%
+% ------------------------------------------------------------------------
+
+function  laje()
+%carrega o arquivo de entrada
+dados_de_entrada
+filename = 'marcus.xlsx';
+marcus = readmatrix(filename,"Sheet",tipo_marcus(tipo));
+n = size(marcus(:,1),1);
+
+%localiza a posição da linha de lambda
+indices = find(marcus(:,1) == round(lambda*100)/100);
+
+%localiza a posição da linha de kx, mx, ny, my, ny
+ikx = (indices + 1*n);
+imx = (indices + 2*n);
+inx = (indices + 3*n);
+imy = (indices + 4*n);
+iny = (indices + 5*n);
+
+%e mx, ny, my, ny
+kxm = marcus(ikx);
+mxm = marcus(imx);
+mym = marcus(imy);
+
+if marcus(inx) == 1e+24
+    nxm = inf;
+else
+    nxm = marcus(inx);
+end
+
+if marcus(iny) == 1e+24
+    nym = inf;
+else
+    nym = marcus(iny);
+end
+
+
+
+
+%Dados do Concreto
+fck = 30;               %[MPa];
+alfa_E = 1;
+alfa_i = 0.8+0.2*fck/80;
+Ecs = alfa_E*alfa_i*5600*(fck)^0.5;
+
+%Carregamentos
+g_pp = 25*(h/100);     %kN/m²
+g_rev = 1.5;           %kN/m²
+g_alv = 1.0;           %kN/m²
+g = g_pp+g_rev+g_alv;   %kN/m²
+q = 2.0;                %kN/m²(NBR 6118/14)
+p = 5.2;                %kN/m²
+
+%define os valores de mx para um dado alfa_x
+if alfa_x==1
+    mx = 24;
+elseif alfa_x==2
+    mx = 128/9;
+elseif alfa_x==5
+    mx = 8;
+end
+
+%define os valores de mx para um dado alfa_x
+if alfa_y==1
+    my = 24;
+elseif alfa_y==2
+    my = 128/9;
+elseif alfa_y==5
+    my = 8;
+end
+
+%Tabelas de Marcus
+fprintf('\n--------------------------------------------------------\n');
+fprintf('Tabelas de Marcus - Tipo: %d \n',tipo);
+fprintf('--------------------------------------------------------\n');
+
+%Imprime os resultados na tela
+%
+fprintf('kx: %4.4f \n', marcus(ikx));
+fprintf('mx: %4.4f \n', mxm);
+fprintf('nx: %4.4f \n', nxm);
+fprintf('my: %4.4f \n', mym);
+fprintf('ny: %4.4f \n', nym);
+
+
+%Momentos Positivos e Negativo
+Mx = p*lx^2/marcus(imx);
+My = p*lx^2/marcus(imy);
+Xx = -p*lx^2/marcus(inx);
+Xy = -p*lx^2/marcus(iny);
+fprintf('\nMx: %.4f kNm/m\n', Mx);
+fprintf('My: %.4f kNm/m\n', My);
+fprintf('Xx: %.4f kNm/m\n', Xx);
+fprintf('Xy: %.4f kNm/m\n', Xy);
