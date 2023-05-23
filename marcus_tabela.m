@@ -25,9 +25,6 @@ clc
 tipo_marcus = ["tipo1" "tipo2" "tipo3" "tipo4" "tipo5" "tipo6"];
 
 global fsig;
-fck = 30;
-fyk = 500;
-
 fsig = fopen(strcat('Resultados.txt'),'w');
 
 %faz a leitura da planilha
@@ -83,11 +80,10 @@ for i=1:nm
     end
 
 
-    M(i,1) = 100*1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(imx);
-    M(i,2) = 100*1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(imy);
-    M(i,3) = 100*1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(inx);
-    M(i,4) = 100*1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(iny);
-    M(i,5) = 0.8*(100/6)*(h/100)^2*1.3*0.3*(fck)^(2/3);
+    M(i,1) = 1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(imx);
+    M(i,2) = 1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(imy);
+    M(i,3) = 1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(inx);
+    M(i,4) = 1.4*(momento(i+10*nm))*(momento(i+1*nm))^2/marcus(iny);
     
     fprintf(fsig, '--------------------------------------------------------\n');
     fprintf(fsig, 'CÁLCULO DOS ESFORÇOS - LAJE L%d',i);
@@ -121,23 +117,15 @@ for i=1:nm
     %h = 14.93;
     cobrimento = 3;
     d = h-cobrimento-1;
+    fck = 30;
+    fyk = 500;
+    %bitx = 8;
+   % bity = 8;
+    
 
-    %rho_min = 0.2*0.3*fck^(2/3)/fyk;
-    %rho_s = 0.67*rho_min;   
+    msdx = M(i,1)*100;
+    msdy = M(i,2)*100; 
 
-    msdx = M(i,1);
-    msdy = M(i,2);
-
-    Mdmin = 0.8*(100/6)*(h/100)^2*1.3*0.3*(fck)^(2/3)*100;
-
-    if Mdmin > msdx
-        msdx = Mdmin;
-    end
-    if Mdmin > msdy
-        msdy = Mdmin;
-    end
-
-    %mdmin = 0.8*(1/6)*(h/100)^2*1.3*0.3*fck^(2/3)
     %faz a leitura da planilha
     bitola = 'bitola.xlsx';
     bit50 = readmatrix(bitola,"Sheet","ca-50");
@@ -145,47 +133,28 @@ for i=1:nm
     
    
     xx = (0.68*d-sqrt((0.68*d)^2-4*0.272*(msdx/(100*fck*0.1/1.4))))/0.544;
-    fprintf('\nxx = %.2f cm\n', xx);
+    %fprintf('\nxx = %.2f cm\n', xx);
     
     xy = (0.68*d-sqrt((0.68*d)^2-4*0.272*(msdy/(100*fck*0.1/1.4))))/0.544;
-    fprintf('\nxy = %.2f cm\n', xy);
+    %fprintf('\nxy = %.2f cm\n', xy);
     
     zx = d - 0.4*xx;
     Asx = msdx/(zx*(fyk*0.1/1.15));
-    Asxt = Asx;
-    
     
     zy = d - 0.4*xy;
     Asy = msdy/(zy*(fyk*0.1/1.15));
-    Asyt = Asy;
-
-   
-    Asmin = 0.0015*100*h
-    Asx
-    
-    if Asmin > Asx
-        Asx = Asmin
-    end
-    Asy
-    if Asmin > Asy
-        Asy = Asmin;
-    end
-    
-
-    %bitx = 5;
+    bitx = 5;
     for ib=1:nb
         sb = bit50(ib,2)*100/Asx;
         if sb >= 13 && sb<=22
-            bitx=bit50(ib,1)
-        else
-
+            bitx=bit50(ib,1);
         end
     end 
-    %bity = 5;
+    bity = 5;
     for ib2=1:nb
         sb2 = bit50(ib2,2)*100/Asy;
         if sb2 >= 13 && sb2 <=22
-            bity=bit50(ib2,1)
+            bity=bit50(ib2,1);
         end
     end 
 
@@ -201,9 +170,9 @@ for i=1:nm
     Ay = bit50(iAy);
     
     sx = Ax*100/Asx;
-    sy = Ay*100/Asy;
-
     SX = floor(sx);
+    
+    sy = Ay*100/Asy;
     SY = floor(sy);
     
     qtdx = (lyy*100-14)/SX;
@@ -230,7 +199,7 @@ for i=1:nm
     fprintf(fsig,'\nlinha neutra x = %.2f cm', xx);
     fprintf(fsig,'\nMsd = 1.4 ⋅ Mx = %.4f kN.cm/m', msdx);
     fprintf(fsig,'\nBraço de alavanca (z) = d - 0.4x = %.2f cm', zx);
-    fprintf(fsig,'\nÁrea de aço (Asx) = %.2f cm² (Asmin = %.2f cm²)', Asxt,Asmin);
+    fprintf(fsig,'\nÁrea de aço (Asx) = %.2f cm²', Asx);
     fprintf(fsig,'\nFerro utilizado: Ø%d (área = %.2f cm²)',bitx, Ax);
     fprintf(fsig,'\nEspaçamento (Espx) = Øs ⋅ 100/Asx = %.2f ⋅ 100/%.2f = %.2f cm',Ax, Asx,sx);
     fprintf(fsig,'\nEspx = %.2f cm (projeto)', SX);
@@ -244,8 +213,8 @@ for i=1:nm
     fprintf(fsig,'\nCOLOCAR A FÓRMULA DO X(linha neutra)\n');
     fprintf(fsig,'\nlinha neutra x = %.2f cm', xy);
     fprintf(fsig,'\nMsd = 1.4 ⋅ My = %.4f kN.cm/m', msdy);
-    fprintf(fsig,'\nBraço de alavanca (z) = d - 0.4x = %.2f cm', zy);         
-    fprintf(fsig,'\nÁrea de aço (Asy) = %.2f cm² (Asmin = %.2f cm²)', Asyt,Asmin);
+    fprintf(fsig,'\nBraço de alavanca (z) = d - 0.4x = %.2f cm', zy); 
+    fprintf(fsig,'\nÁrea de aço (Asy) = %.2f cm²', Asy); 
     fprintf(fsig,'\nFerro utilizado: Ø%d (área = %.2f cm²)',bity, Ay);
     fprintf(fsig,'\nEspaçamento (Espy) = Øs ⋅ 100/Asy = %.2f ⋅ 100/%.2f = %.2f cm',Ay, Asy,sy);
     fprintf(fsig,'\nEspy = %.2f cm (projeto)', SY); 
@@ -269,4 +238,4 @@ fprintf('\n--------------------------------------------------------\n')
 fprintf(' OK');
 fprintf('\n-------------------------------------------------------- \n');
 
-M/10
+M
