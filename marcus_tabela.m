@@ -124,8 +124,24 @@ for i=1:nm
     
 
     msdx = M(i,1)*100;
+    msdxt = msdx;
     msdy = M(i,2)*100; 
+    msdyt = msdy;
+    
+    Mdmin = 0.8*(100/6)*(h/100)^2*1.3*0.3*(fck)^(2/3)*100;
+    %fprintf('\nMdmin = %.2f kN.cm/m\n', Mdmin);
+    if Mdmin > msdx
+        msdx = Mdmin;
+        %fprintf('\nMx(%d) = %.2f kN.cm/m\n',i, msdx);
+    end
+    if Mdmin > msdy
+        msdy = Mdmin;
+        %fprintf('\nMy(%d) = %.2f kN.cm/m\n',i, msdy);
+    end
 
+
+    %fprintf('\nMx(%d) = %.2f kN.cm/m\n',i, msdx);
+    %fprintf('\nMy(%d) = %.2f kN.cm/m\n',i, msdy);
     %faz a leitura da planilha
     bitola = 'bitola.xlsx';
     bit50 = readmatrix(bitola,"Sheet","ca-50");
@@ -140,34 +156,47 @@ for i=1:nm
     
     zx = d - 0.4*xx;
     Asx = msdx/(zx*(fyk*0.1/1.15));
+    %fprintf('\nAsx Antes(%d) = %.2f cm²\n',i, Asx);
+    Asxt = Asx;
     
     zy = d - 0.4*xy;
     Asy = msdy/(zy*(fyk*0.1/1.15));
-    bitx = 5;
-    for ib=1:nb
-        sb = bit50(ib,2)*100/Asx;
-        if sb >= 13 && sb<=22
-            bitx=bit50(ib,1);
-        end
-    end 
-    bity = 5;
-    for ib2=1:nb
-        sb2 = bit50(ib2,2)*100/Asy;
-        if sb2 >= 13 && sb2 <=22
-            bity=bit50(ib2,1);
-        end
-    end 
+    Asyt = Asy;
+    %fprintf('\nAsy Antes(%d) = %.2f cm²\n',i, Asy);  
+    Asmin = 0.0015*100*h;
+    %fprintf('\nAsmin(%d) = %.2f cm²\n',i, Asmin);
 
+    if Asmin > Asx
+        Asx = Asmin;
+        %fprintf('\nAsx(%d) = %.2f cm²\n',i, Asx);
+    end
+    %fprintf('\nAsx depois(%d) = %.2f cm²\n',i, Asx);
+    if Asmin > Asy
+        Asy = Asmin;
+        %fprintf('\nAsy(%d) = %.2f cm²\n',i, Asy);
+    end
+    %fprintf('\nAsy depois(%d) = %.2f cm²\n',i, Asy);
+    
+    matS = zeros(nb,4);
+    for ib=1:nb
+        matS(ib,1)= bit50(ib,2)*100/Asx;
+        matS(ib,2)= bit50(ib,2)*100/Asy;
+        matS(ib,3)= bit50(ib,1);
+        matS(ib,4)= bit50(ib,2);
+    end 
+    
+    fprintf('\nib = %d e i = %d\n',ib, i);
+    matS
+    sbx = max(matS(matS(:,1) <= 23,1))
+    sby = max(matS(matS(:,2) <= 23,2))
+    
+    
     %localiza a posição da linha da bitola na tabela de área
-    indx = find(bit50(:,1) == bitx);
-    indy = find(bit50(:,1) == bity);
-    
-    %localiza a posição da linha de Ax, Ay
-    iAx = (indx + 1*nb);
-    iAy = (indy + 1*nb);
-    
-    Ax = bit50(iAx);
-    Ay = bit50(iAy);
+    indx = find(matS(:,1) == sbx);
+    indy = find(matS(:,2) == sby);
+
+    Ax = matS(indx,4);
+    Ay = matS(indy,4);
     
     sx = Ax*100/Asx;
     SX = floor(sx);
@@ -197,14 +226,15 @@ for i=1:nm
     fprintf(fsig, '\n--------------------------------------------------------');
     fprintf(fsig,'\nCOLOCAR A FÓRMULA DO X(linha neutra)\n');
     fprintf(fsig,'\nlinha neutra x = %.2f cm', xx);
+    fprintf(fsig,'\nMsdmin = %.4f kN.cm/m', Mdmin);
     fprintf(fsig,'\nMsd = 1.4 ⋅ Mx = %.4f kN.cm/m', msdx);
     fprintf(fsig,'\nBraço de alavanca (z) = d - 0.4x = %.2f cm', zx);
-    fprintf(fsig,'\nÁrea de aço (Asx) = %.2f cm²', Asx);
-    fprintf(fsig,'\nFerro utilizado: Ø%d (área = %.2f cm²)',bitx, Ax);
+    fprintf(fsig,'\nÁrea de aço (Asx) = %.2f cm²', Asxt);
+    fprintf(fsig,'\nFerro utilizado: Ø%d (área = %.2f cm²)',matS(indx,3), Ax);
     fprintf(fsig,'\nEspaçamento (Espx) = Øs ⋅ 100/Asx = %.2f ⋅ 100/%.2f = %.2f cm',Ax, Asx,sx);
     fprintf(fsig,'\nEspx = %.2f cm (projeto)', SX);
     fprintf(fsig, '\n--------------------------------------------------------');
-    fprintf(fsig,'\nFERRO EM X: %d N%d Ø%.1f C/%d C = %d\n', QTDX,num_ferrox(1,i),bitx,SX,lxf);
+    fprintf(fsig,'\nFERRO EM X: %d N%d Ø%.1f C/%d C = %d\n', QTDX,num_ferrox(1,i),matS(indx,3),SX,lxf);
     fprintf(fsig, '--------------------------------------------------------\n');
  
     fprintf(fsig, '\n\n--------------------------------------------------------');    
@@ -212,14 +242,15 @@ for i=1:nm
     fprintf(fsig, '\n--------------------------------------------------------');  
     fprintf(fsig,'\nCOLOCAR A FÓRMULA DO X(linha neutra)\n');
     fprintf(fsig,'\nlinha neutra x = %.2f cm', xy);
+    fprintf(fsig,'\nMsdmin = %.4f kN.cm/m', Mdmin);
     fprintf(fsig,'\nMsd = 1.4 ⋅ My = %.4f kN.cm/m', msdy);
     fprintf(fsig,'\nBraço de alavanca (z) = d - 0.4x = %.2f cm', zy); 
-    fprintf(fsig,'\nÁrea de aço (Asy) = %.2f cm²', Asy); 
-    fprintf(fsig,'\nFerro utilizado: Ø%d (área = %.2f cm²)',bity, Ay);
+    fprintf(fsig,'\nÁrea de aço (Asy) = %.2f cm²', Asyt); 
+    fprintf(fsig,'\nFerro utilizado: Ø%d (área = %.2f cm²)',matS(indy,3), Ay);
     fprintf(fsig,'\nEspaçamento (Espy) = Øs ⋅ 100/Asy = %.2f ⋅ 100/%.2f = %.2f cm',Ay, Asy,sy);
     fprintf(fsig,'\nEspy = %.2f cm (projeto)', SY); 
     fprintf(fsig,'\n--------------------------------------------------------');
-    fprintf(fsig,'\nFERRO EM Y: %d N%d Ø%.1f C/%d C = %d\n', QTDY,num_ferroy(1,i),bity,SY,lyf);
+    fprintf(fsig,'\nFERRO EM Y: %d N%d Ø%.1f C/%d C = %d\n', QTDY,num_ferroy(1,i),matS(indy,3),SY,lyf);
     fprintf(fsig,'--------------------------------------------------------\n');
     end
 
